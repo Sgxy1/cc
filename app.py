@@ -19,16 +19,16 @@ def init_db():
     os.makedirs('data', exist_ok=True)
     conn = sqlite3.connect('data/users.db')
     c = conn.cursor()
-    c.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, email TEXT, phone TEXT)")
-    for u in [('admin','admin123','admin@example.com','13800138000'),('alice','alice2025','alice@example.com','13900139001')]:
-        c.execute("INSERT OR IGNORE INTO users (username, password, email, phone) VALUES (?, ?, ?, ?)", u)
+    c.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, email TEXT, phone TEXT, balance REAL DEFAULT 0)")
+    for u in [('admin','admin123','admin@example.com','13800138000', 99999),('alice','alice2025','alice@example.com','13900139001', 100)]:
+        c.execute("INSERT OR IGNORE INTO users (username, password, email, phone, balance) VALUES (?, ?, ?, ?, ?)", u)
     conn.commit()
     conn.close()
 
 def get_user_from_sqlite(username):
     conn = sqlite3.connect('data/users.db')
     c = conn.cursor()
-    c.execute("SELECT id, username, password, email, phone FROM users WHERE username=?", (username,))
+    c.execute("SELECT id, username, password, email, phone, balance FROM users WHERE username=?", (username,))
     row = c.fetchone()
     conn.close()
     return row
@@ -45,7 +45,7 @@ def index():
         else:
             row = get_user_from_sqlite(session['username'])
             if row:
-                user_info = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': 0, 'role': 'user'}
+                user_info = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': row[5], 'role': 'user'}
     if keyword:
         conn = sqlite3.connect('data/users.db')
         c = conn.cursor()
@@ -105,8 +105,32 @@ def search():
         else:
             row = get_user_from_sqlite(session['username'])
             if row:
-                user = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': 0, 'role': 'user'}
+                user = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': row[5], 'role': 'user'}
     return render_template('index.html', user_info=user, keyword=keyword, search_results=results)
+
+@app.route('/profile')
+def profile():
+    user_id = request.args.get('user_id')
+    conn = sqlite3.connect('data/users.db')
+    c = conn.cursor()
+    c.execute("SELECT id, username, email, phone, balance FROM users WHERE id=?", (user_id,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        user = {'id': row[0], 'username': row[1], 'email': row[2], 'phone': row[3], 'balance': row[4]}
+        return render_template('profile.html', user=user)
+    return render_template('profile.html', user=None)
+
+@app.route('/recharge', methods=['POST'])
+def recharge():
+    user_id = request.form['user_id']
+    amount = request.form['amount']
+    conn = sqlite3.connect('data/users.db')
+    c = conn.cursor()
+    c.execute("UPDATE users SET balance = balance + ? WHERE id=?", (amount, user_id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('profile', user_id=user_id))
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():

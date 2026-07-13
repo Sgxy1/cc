@@ -13,6 +13,7 @@
             <div class="nav-menu">
                 {% if session.username %}
                 <span class="nav-user">欢迎，{{ session.username }}</span>
+                <a href="{{ url_for('profile') }}" class="nav-link">个人中心</a>
                 <a href="{{ url_for('upload') }}" class="nav-link">上传头像</a>
                 <a href="{{ url_for('logout') }}" class="nav-link nav-logout">退出</a>
                 {% else %}

@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
 app.secret_key = 'dev-key-2025'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 USERS = {
     'admin': {'password': bcrypt.hashpw(b'admin123', bcrypt.gensalt()).decode(), 'role': 'admin', 'email': 'admin@example.com', 'phone': '13800138000', 'balance': 99999},
@@ -101,6 +102,24 @@ def search():
             if row:
                 user = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': 0, 'role': 'user'}
     return render_template('index.html', user_info=user, keyword=keyword, search_results=results)
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    error = ''
+    file_url = ''
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if file and file.filename:
+            filename = file.filename
+            upload_dir = os.path.join(app.root_path, 'static', 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            file.save(os.path.join(upload_dir, filename))
+            file_url = url_for('static', filename='uploads/' + filename)
+        else:
+            error = '请选择要上传的文件'
+    return render_template('upload.html', file_url=file_url, error=error)
 
 @app.route('/logout')
 def logout():

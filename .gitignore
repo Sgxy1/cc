@@ -1,6 +1,6 @@
 *.pyc
 __pycache__/
 data/
-uploads/
+/uploads/
 *.db
 .DS_Store

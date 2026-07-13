@@ -13,6 +13,7 @@
         <tr><th>余额</th><td>{{ user_info.balance }}</td></tr>
     </table>
     <div class="action-links">
+        <a href="{{ url_for('upload') }}" class="btn">上传头像</a>
         <a href="{{ url_for('logout') }}" class="btn btn-secondary">退出登录</a>
     </div>
 </div>

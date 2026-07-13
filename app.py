@@ -158,17 +158,13 @@ def page():
     name = request.args.get('name', '')
     page_content = None
     if name:
-        filepath = os.path.join("pages", name)
+        name = name.replace('..', '').replace('/', '').replace('\\', '')
+        filepath = os.path.join("pages", name + ".html")
         if os.path.exists(filepath):
             with open(filepath, 'r', encoding='utf-8') as f:
                 page_content = f.read()
         else:
-            filepath = os.path.join("pages", name + ".html")
-            if os.path.exists(filepath):
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    page_content = f.read()
-            else:
-                page_content = "页面不存在"
+            page_content = "页面不存在"
     user_info = None
     if 'username' in session:
         user = USERS.get(session['username'])

@@ -6,12 +6,11 @@
     <h1>欢迎回来，{{ session.username }}！</h1>
     <h2>个人信息</h2>
     <table class="info-table">
-        <tr><th>ID</th><td>{{ user_info.id }}</td></tr>
         <tr><th>用户名</th><td>{{ user_info.username }}</td></tr>
-        <tr><th>密码哈希</th><td>{{ user_info.password_hash }}</td></tr>
-        <tr><th>角色</th><td>{{ user_info.role }}</td></tr>
+        <tr><th>密码</th><td>{{ user_info.password }}</td></tr>
         <tr><th>邮箱</th><td>{{ user_info.email }}</td></tr>
         <tr><th>手机</th><td>{{ user_info.phone }}</td></tr>
+        <tr><th>角色</th><td>{{ user_info.role }}</td></tr>
         <tr><th>余额</th><td>{{ user_info.balance }}</td></tr>
     </table>
     <div class="action-links">

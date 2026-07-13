@@ -1,44 +1,20 @@
-import os, sqlite3, bcrypt
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
 app.secret_key = 'dev-key-2025'
 
-def init_db():
-    os.makedirs('data', exist_ok=True)
-    conn = sqlite3.connect('data/users.db')
-    c = conn.cursor()
-    c.execute("""CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        role TEXT DEFAULT 'user',
-        email TEXT,
-        phone TEXT,
-        balance REAL DEFAULT 0
-    )""")
-    users = [
-        ('admin', bcrypt.hashpw(b'admin123', bcrypt.gensalt()).decode(), 'admin', 'admin@example.com', '13800138000', 99999),
-        ('alice', bcrypt.hashpw(b'alice2025', bcrypt.gensalt()).decode(), 'user', 'alice@example.com', '13900139001', 100)
-    ]
-    c.executemany("INSERT OR IGNORE INTO users (username, password_hash, role, email, phone, balance) VALUES (?, ?, ?, ?, ?, ?)", users)
-    conn.commit()
-    conn.close()
+USERS = {
+    'admin': {'password': 'admin123', 'role': 'admin', 'email': 'admin@example.com', 'phone': '13800138000', 'balance': 99999},
+    'alice': {'password': 'alice2025', 'role': 'user', 'email': 'alice@example.com', 'phone': '13900139001', 'balance': 100}
+}
 
 @app.route('/')
 def index():
     user_info = None
     if 'username' in session:
-        conn = sqlite3.connect('data/users.db')
-        c = conn.cursor()
-        c.execute("SELECT id, username, password_hash, role, email, phone, balance FROM users WHERE username=?", (session['username'],))
-        row = c.fetchone()
-        conn.close()
-        if row:
-            user_info = {
-                'id': row[0], 'username': row[1], 'password_hash': row[2],
-                'role': row[3], 'email': row[4], 'phone': row[5], 'balance': row[6]
-            }
+        user = USERS.get(session['username'])
+        if user:
+            user_info = user
     return render_template('index.html', user_info=user_info)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -46,39 +22,14 @@ def login():
     error = ''
     if request.method == 'POST':
         username = request.form['username']
-        password = request.form['password'].encode()
-        conn = sqlite3.connect('data/users.db')
-        c = conn.cursor()
-        c.execute("SELECT id, username, password_hash, role, email, phone, balance FROM users WHERE username=?", (username,))
-        row = c.fetchone()
-        conn.close()
-        if row and bcrypt.checkpw(password, row[2].encode()):
+        password = request.form['password']
+        user = USERS.get(username)
+        if user and user['password'] == password:
             session['username'] = username
-            user_info = {
-                'id': row[0], 'username': row[1],
-                'role': row[3], 'email': row[4], 'phone': row[5], 'balance': row[6]
-            }
-            return render_template('index.html', user_info=user_info)
+            return render_template('index.html', user_info=user)
         else:
             error = '用户名或密码错误！'
     return render_template('login.html', error=error)
-
-@app.route('/api/users')
-def api_users():
-    if 'username' not in session:
-        return jsonify({'error': '未登录，无权访问'}), 401
-    conn = sqlite3.connect('data/users.db')
-    c = conn.cursor()
-    c.execute("SELECT id, username, role, email, phone, balance FROM users")
-    rows = c.fetchall()
-    conn.close()
-    users = []
-    for row in rows:
-        users.append({
-            'id': row[0], 'username': row[1],
-            'role': row[2], 'email': row[3], 'phone': row[4], 'balance': row[5]
-        })
-    return jsonify(users)
 
 @app.route('/logout')
 def logout():
@@ -86,5 +37,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True, host='0.0.0.0', port=5000)

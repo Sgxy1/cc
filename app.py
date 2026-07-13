@@ -1,4 +1,4 @@
-import os, sqlite3, hashlib
+import os, sqlite3, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 
 app = Flask(__name__)
@@ -18,8 +18,8 @@ def init_db():
         balance REAL DEFAULT 0
     )""")
     users = [
-        ('admin', hashlib.md5(b'admin123').hexdigest(), 'admin', 'admin@example.com', '13800138000', 99999),
-        ('alice', hashlib.md5(b'alice2025').hexdigest(), 'user', 'alice@example.com', '13900139001', 100)
+        ('admin', bcrypt.hashpw(b'admin123', bcrypt.gensalt()).decode(), 'admin', 'admin@example.com', '13800138000', 99999),
+        ('alice', bcrypt.hashpw(b'alice2025', bcrypt.gensalt()).decode(), 'user', 'alice@example.com', '13900139001', 100)
     ]
     c.executemany("INSERT OR IGNORE INTO users (username, password_hash, role, email, phone, balance) VALUES (?, ?, ?, ?, ?, ?)", users)
     conn.commit()
@@ -46,17 +46,16 @@ def login():
     error = ''
     if request.method == 'POST':
         username = request.form['username']
-        password = request.form['password']
-        password_hash = hashlib.md5(password.encode()).hexdigest()
+        password = request.form['password'].encode()
         conn = sqlite3.connect('data/users.db')
         c = conn.cursor()
-        c.execute("SELECT id, username, password_hash, role, email, phone, balance FROM users WHERE username=? AND password_hash=?", (username, password_hash))
+        c.execute("SELECT id, username, password_hash, role, email, phone, balance FROM users WHERE username=?", (username,))
         row = c.fetchone()
         conn.close()
-        if row:
+        if row and bcrypt.checkpw(password, row[2].encode()):
             session['username'] = username
             user_info = {
-                'id': row[0], 'username': row[1], 'password_hash': row[2],
+                'id': row[0], 'username': row[1],
                 'role': row[3], 'email': row[4], 'phone': row[5], 'balance': row[6]
             }
             return render_template('index.html', user_info=user_info)
@@ -66,16 +65,18 @@ def login():
 
 @app.route('/api/users')
 def api_users():
+    if 'username' not in session:
+        return jsonify({'error': '未登录，无权访问'}), 401
     conn = sqlite3.connect('data/users.db')
     c = conn.cursor()
-    c.execute("SELECT id, username, password_hash, role, email, phone, balance FROM users")
+    c.execute("SELECT id, username, role, email, phone, balance FROM users")
     rows = c.fetchall()
     conn.close()
     users = []
     for row in rows:
         users.append({
-            'id': row[0], 'username': row[1], 'password_hash': row[2],
-            'role': row[3], 'email': row[4], 'phone': row[5], 'balance': row[6]
+            'id': row[0], 'username': row[1],
+            'role': row[2], 'email': row[3], 'phone': row[4], 'balance': row[5]
         })
     return jsonify(users)
 

@@ -1,4 +1,4 @@
-import sqlite3, os, hashlib
+import sqlite3, os, bcrypt
 
 def init_database():
     os.makedirs('data', exist_ok=True)
@@ -14,8 +14,8 @@ def init_database():
         balance REAL DEFAULT 0
     )""")
     users = [
-        ('admin', hashlib.md5(b'admin123').hexdigest(), 'admin', 'admin@example.com', '13800138000', 99999),
-        ('alice', hashlib.md5(b'alice2025').hexdigest(), 'user', 'alice@example.com', '13900139001', 100)
+        ('admin', bcrypt.hashpw(b'admin123', bcrypt.gensalt()).decode(), 'admin', 'admin@example.com', '13800138000', 99999),
+        ('alice', bcrypt.hashpw(b'alice2025', bcrypt.gensalt()).decode(), 'user', 'alice@example.com', '13900139001', 100)
     ]
     c.executemany("INSERT OR IGNORE INTO users (username, password_hash, role, email, phone, balance) VALUES (?, ?, ?, ?, ?, ?)", users)
     conn.commit()

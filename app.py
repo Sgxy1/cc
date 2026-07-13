@@ -43,9 +43,7 @@ def index():
     if keyword:
         conn = sqlite3.connect('data/users.db')
         c = conn.cursor()
-        sql = f"SELECT id, username, email, phone FROM users WHERE username LIKE '%{keyword}%' OR email LIKE '%{keyword}%'"
-        print(f"[SQL] {sql}")
-        c.execute(sql)
+        c.execute("SELECT id, username, email, phone FROM users WHERE username LIKE ? OR email LIKE ?", ('%' + keyword + '%', '%' + keyword + '%'))
         search_results = c.fetchall()
         conn.close()
     return render_template('index.html', user_info=user_info, keyword=keyword, search_results=search_results)
@@ -79,9 +77,7 @@ def register():
         phone = request.form['phone']
         conn = sqlite3.connect('data/users.db')
         c = conn.cursor()
-        sql = f"INSERT INTO users (username, password, email, phone) VALUES ('{username}', '{password}', '{email}', '{phone}')"
-        print(f"[SQL] {sql}")
-        c.execute(sql)
+        c.execute("INSERT INTO users (username, password, email, phone) VALUES (?, ?, ?, ?)", (username, password, email, phone))
         conn.commit()
         conn.close()
         message = '注册成功，请登录'
@@ -92,9 +88,7 @@ def search():
     keyword = request.args.get('keyword', '')
     conn = sqlite3.connect('data/users.db')
     c = conn.cursor()
-    sql = f"SELECT id, username, email, phone FROM users WHERE username LIKE '%{keyword}%' OR email LIKE '%{keyword}%'"
-    print(f"[SQL] {sql}")
-    c.execute(sql)
+    c.execute("SELECT id, username, email, phone FROM users WHERE username LIKE ? OR email LIKE ?", ('%' + keyword + '%', '%' + keyword + '%'))
     results = c.fetchall()
     conn.close()
     user = None

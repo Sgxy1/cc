@@ -153,6 +153,33 @@ def recharge():
     conn.close()
     return redirect(url_for('profile'))
 
+@app.route('/page')
+def page():
+    name = request.args.get('name', '')
+    page_content = None
+    if name:
+        filepath = os.path.join("pages", name)
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                page_content = f.read()
+        else:
+            filepath = os.path.join("pages", name + ".html")
+            if os.path.exists(filepath):
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    page_content = f.read()
+            else:
+                page_content = "页面不存在"
+    user_info = None
+    if 'username' in session:
+        user = USERS.get(session['username'])
+        if user:
+            user_info = {k: v for k, v in user.items() if k != 'password'}
+        else:
+            row = get_user_from_sqlite(session['username'])
+            if row:
+                user_info = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': row[5], 'role': 'user'}
+    return render_template('index.html', user_info=user_info, keyword='', search_results=None, page_content=page_content)
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if 'username' not in session:

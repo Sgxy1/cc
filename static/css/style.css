@@ -47,3 +47,8 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .preview-box { margin:16px auto; padding:10px; background:white; border:1px solid #ddd; border-radius:8px; display:inline-block; }
 .upload-preview { max-width:200px; max-height:200px; border-radius:8px; }
 .file-link { word-break:break-all; font-size:13px; color:#667eea; }
+.page-content { padding:10px 0; line-height:1.8; font-size:14px; color:#333; }
+.page-content h1 { font-size:22px; margin-bottom:16px; }
+.page-content h2 { font-size:18px; margin:16px 0 10px; }
+.page-content ul { padding-left:20px; margin:10px 0; }
+.page-content li { margin-bottom:6px; }

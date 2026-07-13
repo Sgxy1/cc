@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}首页{% endblock %}
+{% block content %}
+{% if session.username %}
+<div class="card">
+    <h1>欢迎回来，{{ session.username }}！</h1>
+    <h2>个人信息</h2>
+    <table class="info-table">
+        <tr><th>ID</th><td>{{ user_info.id }}</td></tr>
+        <tr><th>用户名</th><td>{{ user_info.username }}</td></tr>
+        <tr><th>密码哈希</th><td>{{ user_info.password_hash }}</td></tr>
+        <tr><th>角色</th><td>{{ user_info.role }}</td></tr>
+        <tr><th>邮箱</th><td>{{ user_info.email }}</td></tr>
+        <tr><th>手机</th><td>{{ user_info.phone }}</td></tr>
+        <tr><th>余额</th><td>{{ user_info.balance }}</td></tr>
+    </table>
+    <div class="action-links">
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary">退出登录</a>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <h1>用户管理系统</h1>
+    <p>请先登录</p>
+    <a href="{{ url_for('login') }}" class="btn">前往登录</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,26 @@
+import sqlite3, os, hashlib
+
+def init_database():
+    os.makedirs('data', exist_ok=True)
+    conn = sqlite3.connect('data/users.db')
+    c = conn.cursor()
+    c.execute("""CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT DEFAULT 'user',
+        email TEXT,
+        phone TEXT,
+        balance REAL DEFAULT 0
+    )""")
+    users = [
+        ('admin', hashlib.md5(b'admin123').hexdigest(), 'admin', 'admin@example.com', '13800138000', 99999),
+        ('alice', hashlib.md5(b'alice2025').hexdigest(), 'user', 'alice@example.com', '13900139001', 100)
+    ]
+    c.executemany("INSERT OR IGNORE INTO users (username, password_hash, role, email, phone, balance) VALUES (?, ?, ?, ?, ?, ?)", users)
+    conn.commit()
+    conn.close()
+    print("数据库初始化完成")
+
+if __name__ == '__main__':
+    init_database()

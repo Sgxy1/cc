@@ -1,4 +1,4 @@
-import os, uuid, sqlite3, bcrypt
+import os, uuid, secrets, sqlite3, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 
 app = Flask(__name__)
@@ -9,6 +9,10 @@ UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.context_processor
+def inject_csrf_token():
+    return {'csrf_token': session.get('csrf_token', '')}
 
 USERS = {
     'admin': {'password': bcrypt.hashpw(b'admin123', bcrypt.gensalt()).decode(), 'role': 'admin', 'email': 'admin@example.com', 'phone': '13800138000', 'balance': 99999},
@@ -63,11 +67,13 @@ def login():
         user = USERS.get(username)
         if user and bcrypt.checkpw(password.encode(), user['password'].encode()):
             session['username'] = username
+            session['csrf_token'] = secrets.token_hex(16)
             return redirect(url_for('index'))
         else:
             row = get_user_from_sqlite(username)
             if row and row[2] == password:
                 session['username'] = username
+                session['csrf_token'] = secrets.token_hex(16)
                 return redirect(url_for('index'))
             else:
                 error = '用户名或密码错误！'
@@ -110,10 +116,12 @@ def search():
 
 @app.route('/profile')
 def profile():
-    user_id = request.args.get('user_id')
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    username = session['username']
     conn = sqlite3.connect('data/users.db')
     c = conn.cursor()
-    c.execute("SELECT id, username, email, phone, balance FROM users WHERE id=?", (user_id,))
+    c.execute("SELECT id, username, email, phone, balance FROM users WHERE username=?", (username,))
     row = c.fetchone()
     conn.close()
     if row:
@@ -123,14 +131,27 @@ def profile():
 
 @app.route('/recharge', methods=['POST'])
 def recharge():
-    user_id = request.form['user_id']
-    amount = request.form['amount']
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    token = request.form.get('csrf_token', '')
+    if token != session.get('csrf_token', ''):
+        return 'CSRF Token 无效', 400
+    amount = request.form.get('amount', '')
+    if not amount:
+        return redirect(url_for('profile'))
+    try:
+        amount = float(amount)
+    except ValueError:
+        return redirect(url_for('profile'))
+    if amount <= 0:
+        return redirect(url_for('profile'))
+    username = session['username']
     conn = sqlite3.connect('data/users.db')
     c = conn.cursor()
-    c.execute("UPDATE users SET balance = balance + ? WHERE id=?", (amount, user_id))
+    c.execute("UPDATE users SET balance = balance + ? WHERE username=?", (amount, username))
     conn.commit()
     conn.close()
-    return redirect(url_for('profile', user_id=user_id))
+    return redirect(url_for('profile'))
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():

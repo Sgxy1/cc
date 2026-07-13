@@ -16,6 +16,28 @@
         <a href="{{ url_for('logout') }}" class="btn btn-secondary">退出登录</a>
     </div>
 </div>
+<div class="card">
+    <h2>搜索用户</h2>
+    <form method="GET" action="{{ url_for('search') }}" class="search-form">
+        <div class="search-box">
+            <input type="text" name="keyword" class="search-input" placeholder="输入用户名或邮箱搜索" value="{{ keyword }}">
+            <button type="submit" class="btn">搜索</button>
+        </div>
+    </form>
+    {% if keyword %}
+    <h3>搜索结果：</h3>
+    {% if search_results %}
+    <table class="info-table">
+        <tr><th>ID</th><th>用户名</th><th>邮箱</th><th>手机</th></tr>
+        {% for row in search_results %}
+        <tr><td>{{ row[0] }}</td><td>{{ row[1] }}</td><td>{{ row[2] }}</td><td>{{ row[3] }}</td></tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="no-result">无搜索结果</p>
+    {% endif %}
+    {% endif %}
+</div>
 {% else %}
 <div class="card">
     <h1>用户管理系统</h1>

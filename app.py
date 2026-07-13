@@ -1,9 +1,14 @@
-import os, sqlite3, bcrypt
-from flask import Flask, render_template, request, redirect, url_for, session
+import os, uuid, sqlite3, bcrypt
+from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 
 app = Flask(__name__)
 app.secret_key = 'dev-key-2025'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 USERS = {
     'admin': {'password': bcrypt.hashpw(b'admin123', bcrypt.gensalt()).decode(), 'role': 'admin', 'email': 'admin@example.com', 'phone': '13800138000', 'balance': 99999},
@@ -112,14 +117,21 @@ def upload():
     if request.method == 'POST':
         file = request.files.get('file')
         if file and file.filename:
-            filename = file.filename
-            upload_dir = os.path.join(app.root_path, 'static', 'uploads')
-            os.makedirs(upload_dir, exist_ok=True)
-            file.save(os.path.join(upload_dir, filename))
-            file_url = url_for('static', filename='uploads/' + filename)
+            if not allowed_file(file.filename):
+                error = '仅允许上传 png、jpg、jpeg、gif 格式的图片'
+            else:
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                safe_name = uuid.uuid4().hex + '.' + ext
+                os.makedirs(UPLOAD_DIR, exist_ok=True)
+                file.save(os.path.join(UPLOAD_DIR, safe_name))
+                file_url = '/uploads/' + safe_name
         else:
             error = '请选择要上传的文件'
     return render_template('upload.html', file_url=file_url, error=error)
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_DIR, filename)
 
 @app.route('/logout')
 def logout():

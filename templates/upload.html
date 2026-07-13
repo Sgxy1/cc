@@ -3,10 +3,11 @@
 {% block content %}
 <div class="card">
     <h1>上传头像</h1>
+    <p>支持 JPG、PNG、GIF 格式的图片，文件大小不超过 2MB。</p>
     <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
         <div class="form-group">
             <label for="file">选择文件</label>
-            <input type="file" id="file" name="file" required>
+            <input type="file" id="file" name="file" accept=".jpg,.jpeg,.png,.gif" required>
         </div>
         <button type="submit" class="btn">上传</button>
     </form>

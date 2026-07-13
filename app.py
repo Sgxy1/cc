@@ -5,7 +5,9 @@ app = Flask(__name__)
 app.secret_key = 'dev-key-2025'
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
+DB_PATH = os.path.join(BASE_DIR, 'data', 'users.db')
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -20,8 +22,8 @@ USERS = {
 }
 
 def init_db():
-    os.makedirs('data', exist_ok=True)
-    conn = sqlite3.connect('data/users.db')
+    os.makedirs(os.path.join(BASE_DIR, 'data'), exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, email TEXT, phone TEXT, balance REAL DEFAULT 0)")
     for u in [('admin','admin123','admin@example.com','13800138000', 99999),('alice','alice2025','alice@example.com','13900139001', 100)]:
@@ -30,7 +32,7 @@ def init_db():
     conn.close()
 
 def get_user_from_sqlite(username):
-    conn = sqlite3.connect('data/users.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT id, username, password, email, phone, balance FROM users WHERE username=?", (username,))
     row = c.fetchone()
@@ -51,7 +53,7 @@ def index():
             if row:
                 user_info = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': row[5], 'role': 'user'}
     if keyword:
-        conn = sqlite3.connect('data/users.db')
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute("SELECT id, username, email, phone FROM users WHERE username LIKE ? OR email LIKE ?", ('%' + keyword + '%', '%' + keyword + '%'))
         search_results = c.fetchall()
@@ -87,7 +89,7 @@ def register():
         password = request.form['password']
         email = request.form['email']
         phone = request.form['phone']
-        conn = sqlite3.connect('data/users.db')
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute("INSERT INTO users (username, password, email, phone) VALUES (?, ?, ?, ?)", (username, password, email, phone))
         conn.commit()
@@ -98,7 +100,7 @@ def register():
 @app.route('/search')
 def search():
     keyword = request.args.get('keyword', '')
-    conn = sqlite3.connect('data/users.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT id, username, email, phone FROM users WHERE username LIKE ? OR email LIKE ?", ('%' + keyword + '%', '%' + keyword + '%'))
     results = c.fetchall()
@@ -119,7 +121,7 @@ def profile():
     if 'username' not in session:
         return redirect(url_for('login'))
     username = session['username']
-    conn = sqlite3.connect('data/users.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT id, username, email, phone, balance FROM users WHERE username=?", (username,))
     row = c.fetchone()
@@ -146,7 +148,7 @@ def recharge():
     if amount <= 0:
         return redirect(url_for('profile'))
     username = session['username']
-    conn = sqlite3.connect('data/users.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("UPDATE users SET balance = balance + ? WHERE username=?", (amount, username))
     conn.commit()

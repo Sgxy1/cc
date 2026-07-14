@@ -182,13 +182,24 @@ def page():
 def change_password():
     if 'username' not in session:
         return redirect(url_for('login'))
-    username = request.form['username']
-    new_password = request.form['new_password']
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    if username in USERS:
+    token = request.form.get('csrf_token', '')
+    if token != session.get('csrf_token', ''):
+        return 'CSRF Token 无效', 400
+    old_password = request.form.get('old_password', '')
+    new_password = request.form.get('new_password', '')
+    username = session['username']
+    user = USERS.get(username)
+    if user:
+        if not bcrypt.checkpw(old_password.encode(), user['password'].encode()):
+            return redirect(url_for('profile'))
         hashed = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
         USERS[username]['password'] = hashed
+    else:
+        row = get_user_from_sqlite(username)
+        if not row or row[2] != old_password:
+            return redirect(url_for('profile'))
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
     c.execute("UPDATE users SET password = ? WHERE username = ?", (new_password, username))
     conn.commit()
     conn.close()

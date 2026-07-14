@@ -178,6 +178,22 @@ def page():
                 user_info = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': row[5], 'role': 'user'}
     return render_template('index.html', user_info=user_info, keyword='', search_results=None, page_content=page_content)
 
+@app.route('/change-password', methods=['POST'])
+def change_password():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    username = request.form['username']
+    new_password = request.form['new_password']
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    if username in USERS:
+        hashed = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+        USERS[username]['password'] = hashed
+    c.execute("UPDATE users SET password = ? WHERE username = ?", (new_password, username))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('profile'))
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if 'username' not in session:

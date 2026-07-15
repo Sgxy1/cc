@@ -1,4 +1,4 @@
-import os, uuid, secrets, sqlite3, bcrypt
+import os, uuid, secrets, sqlite3, bcrypt, urllib.request, urllib.error
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 
 app = Flask(__name__)
@@ -204,6 +204,30 @@ def change_password():
     conn.commit()
     conn.close()
     return redirect(url_for('profile'))
+
+@app.route('/fetch-url', methods=['POST'])
+def fetch_url():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    url = request.form.get('url', '')
+    result = None
+    if url:
+        try:
+            resp = urllib.request.urlopen(url, timeout=10)
+            content = resp.read().decode('utf-8', errors='ignore')[:5000]
+            result = {'status': resp.status, 'content': content}
+        except Exception as e:
+            result = {'status': '错误', 'content': str(e)}
+    user_info = None
+    if 'username' in session:
+        user = USERS.get(session['username'])
+        if user:
+            user_info = {k: v for k, v in user.items() if k != 'password'}
+        else:
+            row = get_user_from_sqlite(session['username'])
+            if row:
+                user_info = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': row[5], 'role': 'user'}
+    return render_template('index.html', user_info=user_info, keyword='', search_results=None, fetch_result=result)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():

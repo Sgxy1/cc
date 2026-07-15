@@ -13,10 +13,13 @@
 | Day 4 | 个人中心 & 充值 | 越权访问（IDOR）、金额篡改、CSRF、用户枚举 |
 | Day 5 | 动态页面加载 | 本地文件包含（LFI）、HTML 注入 |
 | Day 6 | 密码修改 | CSRF、越权修改密码、无原密码校验 |
+| Day 7 | URL 抓取 | SSRF（服务端请求伪造） |
 
 ## 版本演进
 
 ```
+Day7 修复   --  协议限制 + 内网地址拦截
+Day7 原码   --  URL抓取功能（SSRF漏洞）
 Day6 修复   --  原密码校验 + CSRF Token + Session绑定
 Day6 原码   --  密码修改功能（无原密码验证 + 越权修改 + 无CSRF）
 Day5 修复   --  路径过滤 + 移除未转义渲染
@@ -170,6 +173,25 @@ POST /change-password username=admin, new_password=hacked123
 -> 攻击者之后用 admin/hacked123 登录，获取管理员权限
 ```
 
-**修复方案：** 校验原密码 + Session身份绑定 + CSRF Token## 许可证
+**修复方案：** 校验原密码 + Session身份绑定 + CSRF Token
+
+### Day 7：SSRF 服务端请求伪造漏洞
+
+| 漏洞 | 描述 | 代码位置 |
+|------|------|----------|
+| SSRF | 用户可提交任意 URL，服务端直接请求该地址 | app.py Day7 原码 /fetch-url |
+| 内网探测 | 未限制目标 IP 范围，可访问内网服务 | app.py Day7 原码 |
+| file 协议读取 | 未限制协议，支持 file:// 读取本地文件 | app.py Day7 原码 |
+
+**攻击示例：**
+```
+POST /fetch-url url=http://127.0.0.1:5000/   -> 访问本机服务
+POST /fetch-url url=file:///etc/passwd        -> 读取系统文件
+POST /fetch-url url=http://10.0.0.1:3306      -> 探测内网数据库
+```
+
+**修复方案：** 限制协议为 http/https + 禁止内网地址
+
+## 许可证
 
 本项目仅供教学演示使用，请勿用于实际生产环境。

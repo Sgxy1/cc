@@ -1,4 +1,4 @@
-import os, uuid, secrets, sqlite3, bcrypt, urllib.request, urllib.error
+import os, uuid, secrets, sqlite3, bcrypt, urllib.request, urllib.error, urllib.parse, socket
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 
 app = Flask(__name__)
@@ -212,12 +212,28 @@ def fetch_url():
     url = request.form.get('url', '')
     result = None
     if url:
-        try:
-            resp = urllib.request.urlopen(url, timeout=10)
-            content = resp.read().decode('utf-8', errors='ignore')[:5000]
-            result = {'status': resp.status, 'content': content}
-        except Exception as e:
-            result = {'status': '错误', 'content': str(e)}
+        if not url.startswith('http://') and not url.startswith('https://'):
+            result = {'status': '错误', 'content': '仅允许 http:// 和 https:// 协议'}
+        else:
+            try:
+                host = urllib.parse.urlparse(url).hostname
+                ip = socket.gethostbyname(host)
+                private_prefixes = ['127.', '10.', '172.16.', '172.17.', '172.18.', '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.', '172.26.', '172.27.', '172.28.', '172.29.', '172.30.', '172.31.', '192.168.', '0.', '169.254.']
+                is_private = False
+                for prefix in private_prefixes:
+                    if ip.startswith(prefix):
+                        is_private = True
+                        break
+                if ip == '::1' or ip == 'localhost':
+                    is_private = True
+                if is_private:
+                    result = {'status': '错误', 'content': '不允许访问内网地址'}
+                else:
+                    resp = urllib.request.urlopen(url, timeout=10)
+                    content = resp.read().decode('utf-8', errors='ignore')[:5000]
+                    result = {'status': resp.status, 'content': content}
+            except Exception as e:
+                result = {'status': '错误', 'content': str(e)}
     user_info = None
     if 'username' in session:
         user = USERS.get(session['username'])

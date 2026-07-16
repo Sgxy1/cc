@@ -253,14 +253,20 @@ def ping():
     if request.method == 'POST':
         ip = request.form.get('ip', '')
         if ip:
-            try:
-                cmd = f"ping -c 3 {ip}"
-                output = subprocess.check_output(cmd, shell=True, timeout=30, stderr=subprocess.STDOUT)
-                result = output.decode('utf-8', errors='ignore')
-            except subprocess.CalledProcessError as e:
-                result = e.output.decode('utf-8', errors='ignore')
-            except Exception as e:
-                result = str(e)
+            dangerous = [';', '|', '&', '$', '`', '(', ')', '{', '}', '<', '>', '\n', '\r']
+            for char in dangerous:
+                if char in ip:
+                    result = '禁止包含危险字符: ' + char
+                    break
+            if result is None:
+                try:
+                    cmd = ['ping', '-c', '3', ip]
+                    output = subprocess.check_output(cmd, timeout=30, stderr=subprocess.STDOUT)
+                    result = output.decode('utf-8', errors='ignore')
+                except subprocess.CalledProcessError as e:
+                    result = e.output.decode('utf-8', errors='ignore')
+                except Exception as e:
+                    result = str(e)
     return render_template('ping.html', result=result)
 
 @app.route('/upload', methods=['GET', 'POST'])

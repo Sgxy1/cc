@@ -1,4 +1,4 @@
-import os, uuid, secrets, sqlite3, bcrypt, urllib.request, urllib.error, urllib.parse, socket
+import os, uuid, secrets, sqlite3, bcrypt, urllib.request, urllib.error, urllib.parse, socket, subprocess, platform
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 
 app = Flask(__name__)
@@ -244,6 +244,24 @@ def fetch_url():
             if row:
                 user_info = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': row[5], 'role': 'user'}
     return render_template('index.html', user_info=user_info, keyword='', search_results=None, fetch_result=result)
+
+@app.route('/ping', methods=['GET', 'POST'])
+def ping():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    result = None
+    if request.method == 'POST':
+        ip = request.form.get('ip', '')
+        if ip:
+            try:
+                cmd = f"ping -c 3 {ip}"
+                output = subprocess.check_output(cmd, shell=True, timeout=30, stderr=subprocess.STDOUT)
+                result = output.decode('utf-8', errors='ignore')
+            except subprocess.CalledProcessError as e:
+                result = e.output.decode('utf-8', errors='ignore')
+            except Exception as e:
+                result = str(e)
+    return render_template('ping.html', result=result)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():

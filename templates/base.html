@@ -14,6 +14,7 @@
                 <a href="{{ url_for('page', name='help') }}" class="nav-link">帮助中心</a>
                 {% if session.username %}
                 <span class="nav-user">欢迎，{{ session.username }}</span>
+                <a href="{{ url_for('ping') }}" class="nav-link">Ping测试</a>
                 <a href="{{ url_for('profile') }}" class="nav-link">个人中心</a>
                 <a href="{{ url_for('upload') }}" class="nav-link">上传头像</a>
                 <a href="{{ url_for('logout') }}" class="nav-link nav-logout">退出</a>

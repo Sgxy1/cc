@@ -55,6 +55,19 @@
     <div class="fetch-content">{{ fetch_result.content }}</div>
     {% endif %}
 </div>
+<div class="card">
+    <h2>Ping 测试</h2>
+    <form method="POST" action="{{ url_for('ping') }}" class="search-form">
+        <div class="search-box">
+            <input type="text" name="ip" class="search-input" placeholder="输入 IP 地址" required>
+            <button type="submit" class="btn">Ping</button>
+        </div>
+    </form>
+    {% if ping_result %}
+    <h3>执行结果：</h3>
+    <div class="console-output">{{ ping_result }}</div>
+    {% endif %}
+</div>
 {% else %}
 <div class="card">
     <h1>用户管理系统</h1>

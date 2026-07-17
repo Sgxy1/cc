@@ -267,6 +267,17 @@ def ping():
                     result = e.output.decode('utf-8', errors='ignore')
                 except Exception as e:
                     result = str(e)
+    if request.method == 'POST':
+        user_info = None
+        if 'username' in session:
+            user = USERS.get(session['username'])
+            if user:
+                user_info = {k: v for k, v in user.items() if k != 'password'}
+            else:
+                row = get_user_from_sqlite(session['username'])
+                if row:
+                    user_info = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': row[5], 'role': 'user'}
+        return render_template('index.html', user_info=user_info, keyword='', search_results=None, fetch_result=None, ping_result=result)
     return render_template('ping.html', result=result)
 
 @app.route('/upload', methods=['GET', 'POST'])

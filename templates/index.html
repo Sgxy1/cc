@@ -13,7 +13,6 @@
         <tr><th>余额</th><td>{{ user_info.balance }}</td></tr>
     </table>
     <div class="action-links">
-        <a href="{{ url_for('ping') }}" class="btn">Ping测试</a>
         <a href="{{ url_for('profile') }}" class="btn">个人中心</a>
         <a href="{{ url_for('upload') }}" class="btn">上传头像</a>
         <a href="{{ url_for('logout') }}" class="btn btn-secondary">退出登录</a>
@@ -53,19 +52,6 @@
     <h3>抓取结果：</h3>
     <p>状态码：{{ fetch_result.status }}</p>
     <div class="fetch-content">{{ fetch_result.content }}</div>
-    {% endif %}
-</div>
-<div class="card">
-    <h2>Ping 测试</h2>
-    <form method="POST" action="{{ url_for('ping') }}" class="search-form">
-        <div class="search-box">
-            <input type="text" name="ip" class="search-input" placeholder="输入 IP 地址" required>
-            <button type="submit" class="btn">Ping</button>
-        </div>
-    </form>
-    {% if ping_result %}
-    <h3>执行结果：</h3>
-    <div class="console-output">{{ ping_result }}</div>
     {% endif %}
 </div>
 {% else %}

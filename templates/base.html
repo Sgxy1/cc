@@ -15,6 +15,7 @@
                 {% if session.username %}
                 <a href="{{ url_for('index') }}" class="nav-user">欢迎，{{ session.username }}</a>
                 <a href="{{ url_for('ping') }}" class="nav-link">Ping测试</a>
+                <a href="{{ url_for('xml_import') }}" class="nav-link">XML导入</a>
                 <a href="{{ url_for('profile') }}" class="nav-link">个人中心</a>
                 <a href="{{ url_for('upload') }}" class="nav-link">上传头像</a>
                 <a href="{{ url_for('logout') }}" class="nav-link nav-logout">退出</a>

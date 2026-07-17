@@ -1,4 +1,4 @@
-import os, uuid, secrets, sqlite3, bcrypt, urllib.request, urllib.error, urllib.parse, socket, subprocess, platform
+import os, uuid, secrets, sqlite3, bcrypt, urllib.request, urllib.error, urllib.parse, socket, subprocess, platform, re, json
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 
 app = Flask(__name__)
@@ -235,6 +235,33 @@ def fetch_url():
             if row:
                 user_info = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': row[5], 'role': 'user'}
     return render_template('index.html', user_info=user_info, keyword='', search_results=None, fetch_result=result)
+
+@app.route('/xml-import', methods=['GET', 'POST'])
+def xml_import():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    result = None
+    if request.method == 'POST':
+        xml_data = request.form.get('xml_data', '')
+        if xml_data:
+            try:
+                entities = re.findall(r'<!ENTITY\s+\w+\s+SYSTEM\s+"([^"]+)"', xml_data)
+                for path in entities:
+                    try:
+                        with open(path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                        xml_data = re.sub(r'&(\w+);', content, xml_data, count=1)
+                    except Exception as e:
+                        pass
+                match = re.search(r'<user>\s*<name>(.*?)</name>\s*<email>(.*?)</email>\s*</user>', xml_data, re.DOTALL)
+                if match:
+                    parsed = [{'name': match.group(1), 'email': match.group(2)}]
+                else:
+                    parsed = []
+                result = json.dumps(parsed, ensure_ascii=False, indent=2)
+            except Exception as e:
+                result = json.dumps({'error': str(e)}, ensure_ascii=False)
+    return render_template('xml_import.html', result=result)
 
 @app.route('/ping', methods=['GET', 'POST'])
 def ping():

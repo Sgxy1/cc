@@ -14,10 +14,13 @@
 | Day 5 | 动态页面加载 | 本地文件包含（LFI）、HTML 注入 |
 | Day 6 | 密码修改 | CSRF、越权修改密码、无原密码校验 |
 | Day 7 | URL 抓取 | SSRF（服务端请求伪造） |
+| Day 8 | Ping 网络诊断 | 命令注入（Command Injection） |
 
 ## 版本演进
 
 ```
+Day8 修复   --  危险字符过滤 + 参数列表代替 shell=True
+Day8 原码   --  Ping网络诊断功能（命令注入漏洞）
 Day7 修复   --  协议限制 + 内网地址拦截
 Day7 原码   --  URL抓取功能（SSRF漏洞）
 Day6 修复   --  原密码校验 + CSRF Token + Session绑定
@@ -191,6 +194,23 @@ POST /fetch-url url=http://10.0.0.1:3306      -> 探测内网数据库
 ```
 
 **修复方案：** 限制协议为 http/https + 禁止内网地址
+
+### Day 8：命令注入漏洞
+
+| 漏洞 | 描述 | 代码位置 |
+|------|------|----------|
+| 命令注入 | f-string 拼接用户输入到系统命令 | app.py Day8 原码 /ping |
+| shell=True 执行 | subprocess 启用 shell 解析特殊字符 | app.py Day8 原码 |
+| 无输入过滤 | 对 ip 参数未做任何过滤校验 | app.py Day8 原码 |
+
+**攻击示例：**
+```
+输入 127.0.0.1; whoami      -> 执行系统命令，显示当前用户
+输入 127.0.0.1; dir         -> 列出服务器目录
+输入 127.0.0.1; cat /etc/passwd -> 读取系统敏感文件
+```
+
+**修复方案：** 危险字符黑名单过滤 + 参数列表代替 shell=True
 
 ## 许可证
 

@@ -167,16 +167,7 @@ def page():
                 page_content = f.read()
         else:
             page_content = "页面不存在"
-    user_info = None
-    if 'username' in session:
-        user = USERS.get(session['username'])
-        if user:
-            user_info = {k: v for k, v in user.items() if k != 'password'}
-        else:
-            row = get_user_from_sqlite(session['username'])
-            if row:
-                user_info = {'username': row[1], 'email': row[3], 'phone': row[4], 'balance': row[5], 'role': 'user'}
-    return render_template('index.html', user_info=user_info, keyword='', search_results=None, page_content=page_content)
+    return render_template('page_view.html', page_content=page_content)
 
 @app.route('/change-password', methods=['POST'])
 def change_password():

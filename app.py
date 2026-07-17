@@ -245,20 +245,15 @@ def xml_import():
         xml_data = request.form.get('xml_data', '')
         if xml_data:
             try:
-                entities = re.findall(r'<!ENTITY\s+\w+\s+SYSTEM\s+"([^"]+)"', xml_data)
-                for path in entities:
-                    try:
-                        with open(path, 'r', encoding='utf-8') as f:
-                            content = f.read()
-                        xml_data = re.sub(r'&(\w+);', content, xml_data, count=1)
-                    except Exception as e:
-                        pass
-                match = re.search(r'<user>\s*<name>(.*?)</name>\s*<email>(.*?)</email>\s*</user>', xml_data, re.DOTALL)
-                if match:
-                    parsed = [{'name': match.group(1), 'email': match.group(2)}]
+                if '<!ENTITY' in xml_data or '<!DOCTYPE' in xml_data:
+                    result = json.dumps({'error': '不支持外部实体引用'}, ensure_ascii=False)
                 else:
-                    parsed = []
-                result = json.dumps(parsed, ensure_ascii=False, indent=2)
+                    match = re.search(r'<user>\s*<name>(.*?)</name>\s*<email>(.*?)</email>\s*</user>', xml_data, re.DOTALL)
+                    if match:
+                        parsed = [{'name': match.group(1), 'email': match.group(2)}]
+                    else:
+                        parsed = []
+                    result = json.dumps(parsed, ensure_ascii=False, indent=2)
             except Exception as e:
                 result = json.dumps({'error': str(e)}, ensure_ascii=False)
     return render_template('xml_import.html', result=result)

@@ -15,10 +15,13 @@
 | Day 6 | 密码修改 | CSRF、越权修改密码、无原密码校验 |
 | Day 7 | URL 抓取 | SSRF（服务端请求伪造） |
 | Day 8 | Ping 网络诊断 | 命令注入（Command Injection） |
+| Day 9 | XML 数据导入 | XXE（XML 外部实体注入） |
 
 ## 版本演进
 
 ```
+Day9 修复   --  禁用外部实体声明
+Day9 原码   --  XML数据导入功能（XXE漏洞）
 Day8 修复   --  危险字符过滤 + 参数列表代替 shell=True
 Day8 原码   --  Ping网络诊断功能（命令注入漏洞）
 Day7 修复   --  协议限制 + 内网地址拦截
@@ -211,6 +214,30 @@ POST /fetch-url url=http://10.0.0.1:3306      -> 探测内网数据库
 ```
 
 **修复方案：** 危险字符黑名单过滤 + 参数列表代替 shell=True
+
+### Day 9：XXE 外部实体注入漏洞
+
+| 漏洞 | 描述 | 代码位置 |
+|------|------|----------|
+| XXE 注入 | 解析 XML 时加载外部实体，可读取本地文件 | app.py Day9 原码 /xml-import |
+| 文件读取 | ENTITY 定义中指定 SYSTEM 文件路径可读取任意文件 | app.py Day9 原码 |
+
+**攻击示例：**
+```xml
+<!-- 提交以下 XML 数据可读取服务器文件 -->
+<?xml version="1.0"?>
+<!DOCTYPE foo [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<root>
+  <user>
+    <name>&xxe;</name>
+    <email>test@test.com</email>
+  </user>
+</root>
+```
+
+**修复方案：** 检测并拒绝含有 !ENTITY 或 !DOCTYPE 声明的 XML 数据
 
 ## 许可证
 
